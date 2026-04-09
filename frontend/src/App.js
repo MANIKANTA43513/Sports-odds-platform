@@ -10,18 +10,49 @@ function App() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("http://localhost:4000/api/matches")
-      .then(res => res.json())
-      .then(data => {
-        setMatches(data.matches || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
+ useEffect(() => {
+  const mockData = [
+    {
+      match_id: 1,
+      teamA: "India",
+      teamB: "Australia",
+      favorite: "India",
+      odds: { teamA: 1.8, teamB: 2.2, draw: 3.5 },
+      probabilities: { teamA: 0.55, teamB: 0.35, draw: 0.10 },
+      confidence_score: 7
+    },
+    {
+      match_id: 2,
+      teamA: "Brazil",
+      teamB: "Argentina",
+      favorite: "Argentina",
+      odds: { teamA: 2.5, teamB: 2.3, draw: 3.8 },
+      probabilities: { teamA: 0.37, teamB: 0.40, draw: 0.23 },
+      confidence_score: 6.5
+    },
+    {
+      match_id: 3,
+      teamA: "Germany",
+      teamB: "France",
+      favorite: "France",
+      odds: { teamA: 2.6, teamB: 2.4, draw: 3.6 },
+      probabilities: { teamA: 0.36, teamB: 0.42, draw: 0.22 },
+      confidence_score: 6.8
+    },
+    {
+      match_id: 4,
+      teamA: "England",
+      teamB: "Spain",
+      favorite: "Spain",
+      odds: { teamA: 2.3, teamB: 2.1, draw: 3.4 },
+      probabilities: { teamA: 0.40, teamB: 0.45, draw: 0.15 },
+      confidence_score: 7.2
+    }
+  ];
+
+  setMatches(mockData);
+  setLoading(false);
+}, []);
 
   if (loading) {
     return <h2 style={{ textAlign: "center" }}>Loading matches...</h2>;
