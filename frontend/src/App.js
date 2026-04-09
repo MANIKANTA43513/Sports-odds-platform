@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
 
-const getBorder = (favorite, teamA, teamB) => {
-  if (favorite === teamA) return "3px solid green";
-  if (favorite === teamB) return "3px solid blue";
-  return "1px solid gray";
-};
-
 function App() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
