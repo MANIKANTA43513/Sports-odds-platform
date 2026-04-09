@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sports_odds_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-sportsuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sportspass}
+      POSTGRES_DB: ${DB_NAME:-sportsodds}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - sports_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sportsuser} -d ${DB_NAME:-sportsodds}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  python-service:
+    build:
+      context: ./python-service
+      dockerfile: Dockerfile
+    container_name: sports_odds_python
+    ports:
+      - "5001:5001"
+    networks:
+      - sports_network
+    environment:
+      - FLASK_ENV=production
+      - PORT=5001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sports_odds_backend
+    ports:
+      - "4000:4000"
+    networks:
+      - sports_network
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-sportsuser}
+      - DB_PASSWORD=${DB_PASSWORD:-sportspass}
+      - DB_NAME=${DB_NAME:-sportsodds}
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey2024}
+      - PYTHON_SERVICE_URL=http://python-service:5001
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      python-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: sports_odds_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sports_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:4000/api
+    container_name: sports_odds_frontend
+    ports:
+      - "3000:80"
+    networks:
+      - sports_network
+    depends_on:
+      - backend
+
+networks:
+  sports_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
